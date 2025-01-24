@@ -4,32 +4,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <shaders.h>
+#include <shapes.h>
+#include <smath.h>
 
 #define WIDTH 800
 #define HEIGHT 600
 
-const char *vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "layout (location = 1) in vec3 aColor;\n"
-    "layout (location = 2) in vec2 aTexCoord;\n"
-    "out vec3 outColor;\n"
-    "out vec2 TexCoord;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "   outColor = aColor;\n"
-    "   TexCoord = aTexCoord;\n"
-    "}\0";
-const char *fragmentShaderSource = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "in vec3 outColor;\n"
-    "in vec2 TexCoord;\n"
-    "uniform sampler2D ourTexture;\n"
-    "void main()\n"
-    "{\n"
-    //"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "   FragColor = texture(ourTexture, TexCoord);\n"
-    "}\n\0";
+unsigned int transform_location;
+mat4 transform_matrix;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
@@ -41,10 +23,74 @@ void processInput(GLFWwindow *window) {
         glfwSetWindowShouldClose(window, 1);
 }
 
+void moveRectUp()
+{
+    vec3 translation_vector = {0.0f, 0.5f, 0.0f};
+    mat4 translation_matrix;
+    setIdentityMatrix(translation_matrix);
+    translate(translation_matrix, translation_vector);
+    multiplyMatrices(transform_matrix, translation_matrix, transform_matrix);
+    glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
+}
+
+void moveRectDown()
+{
+    vec3 translation_vector = {0.0f, -0.5f, 0.0f};
+    mat4 translation_matrix;
+    setIdentityMatrix(translation_matrix);
+    translate(translation_matrix, translation_vector);
+    multiplyMatrices(transform_matrix, translation_matrix, transform_matrix);
+    glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
+}
+
+void moveRectLeft()
+{
+    vec3 translation_vector = {-0.5f, 0.0f, 0.0f};
+    mat4 translation_matrix;
+    setIdentityMatrix(translation_matrix);
+    translate(translation_matrix, translation_vector);
+    multiplyMatrices(transform_matrix, translation_matrix, transform_matrix);
+    glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
+}
+
+void moveRectRight()
+{
+    vec3 translation_vector = {0.5f, 0.0f, 0.0f};
+    mat4 translation_matrix;
+    setIdentityMatrix(translation_matrix);
+    translate(translation_matrix, translation_vector);
+    multiplyMatrices(transform_matrix, translation_matrix, transform_matrix);
+    glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if(action == GLFW_PRESS) {
+        switch(key) {
+            case GLFW_KEY_ESCAPE:
+                glfwSetWindowShouldClose(window, 1);
+                break;
+            case GLFW_KEY_K:
+                moveRectUp();
+                break;
+            case GLFW_KEY_J:
+                moveRectDown();
+                break;
+            case GLFW_KEY_H:
+                moveRectLeft();
+                break;
+            case GLFW_KEY_L:
+                moveRectRight();
+                break;
+        }
+    }
+    
+}
+
+
+
 int main(void)
 {
-    
-    
     GLFWwindow* window;
 
     /* Initialize the library */
@@ -67,6 +113,7 @@ int main(void)
     glfwMakeContextCurrent(window);
     // Set callback function for window resize
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
+    glfwSetKeyCallback(window, key_callback);
 
     // Initialize GLAD, needs to be done after setting the window context
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -78,17 +125,20 @@ int main(void)
     int vertex_shader = load_shader("C:/Users/Legion Slim 5/dev/OpenGL/shaders/vertex_shader.glsl", GL_VERTEX_SHADER);
     int fragment_shader = load_shader("C:/Users/Legion Slim 5/dev/OpenGL/shaders/fragment_shader.glsl", GL_FRAGMENT_SHADER);
     int shader_program = create_shader_program();
-
     float vertices[] = {
         // positions          // colors           // texture coords
-        0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+        0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // rect top right
+        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // rect bottom right
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // rect bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f,    // rect top left 
+        0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // tri top right
+        0.5f,  -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // tri top right
+        -0.5f,  -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // tri top right
     }; 
     unsigned int indices[] = {  // note that we start from 0!
         0, 1, 3,   // first triangle
-        1, 2, 3    // second triangle
+        1, 2, 3,    // second triangle
+        4, 5, 6,    // second triangle
     };
 
     // Create a buffer and bind it as a GL_ARRAY_BUFFER, making it a Vertex Buffer Object
@@ -96,7 +146,7 @@ int main(void)
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    /*// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     // Copy dara from vertices to VBO using GL_STATIC_DRAW(data is set once, used many times)
@@ -118,6 +168,16 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+*/
+    Rect rectangle = {
+        vertices,
+        indices,
+        sizeof(vertices),
+        sizeof(indices)
+    };
+
+    drawRect(&rectangle, VAO, VBO, EBO);
 
     // Texture stuff
     unsigned int texture;
@@ -143,18 +203,58 @@ int main(void)
     stbi_image_free(data); // Free image memory
 
     
+
+    // Shader program must be bound before setting the uniform
+    glUseProgram(shader_program);
+    /*
+    mat4 scale_matrix;
+    setIdentityMatrix(scale_matrix); 
+    scale(scale_matrix, 1.5f);
+    mat4 rotate_matrix;
+    setIdentityMatrix(rotate_matrix); 
+    rotate(rotate_matrix, radians(80.0f), Z);
+    multiplyMatrices(transform_matrix, rotate_matrix, scale_matrix);
+    transform_location = glGetUniformLocation(shader_program, "transform_matrix");
+    glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
+   */ 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
-        processInput(window);
+        // Not the best way to handle input
+        //processInput(window);
+
         /* Render here */
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shader_program);
         //glBindTexture(GL_TEXTURE_2D, texture); // Binds that object to GL_TEXTURE_2D target, as with all the other objects, now calls will be made to this target
+        mat4 scale_matrix;
+        setIdentityMatrix(scale_matrix); 
+        scale(scale_matrix, 1.5f);
+        mat4 rotate_matrix;
+        setIdentityMatrix(rotate_matrix); 
+        rotate(rotate_matrix, radians(80.0f), Z);
+        multiplyMatrices(transform_matrix, rotate_matrix, scale_matrix);
+        transform_location = glGetUniformLocation(shader_program, "transform_matrix");
+        glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
+        /*
+        vec3 translation_vector = {0.5f, 0.0f, 0.0f};
+        mat4 translate_matrix;
+        setIdentityMatrix(translate_matrix);
+        translate(translate_matrix, translation_vector);
+        multiplyMatrices(transform_matrix, translate_matrix, transform_matrix);
+        glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        */
+        vec3 translation_vector = {0.5f, 0.0f, 0.0f};
+        mat4 translate_matrix;
+        setIdentityMatrix(translate_matrix);
+        translate(translate_matrix, translation_vector);
+        multiplyMatrices(transform_matrix, translate_matrix, transform_matrix);
+        glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 6));
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
