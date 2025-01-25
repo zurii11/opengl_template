@@ -65,7 +65,8 @@ void moveRectRight()
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    if(action == GLFW_PRESS) {
+    if(action == GLFW_PRESS)
+    {
         switch(key) {
             case GLFW_KEY_ESCAPE:
                 glfwSetWindowShouldClose(window, 1);
@@ -86,8 +87,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
     
 }
-
-
 
 int main(void)
 {
@@ -125,21 +124,26 @@ int main(void)
     int vertex_shader = load_shader("C:/Users/Legion Slim 5/dev/OpenGL/shaders/vertex_shader.glsl", GL_VERTEX_SHADER);
     int fragment_shader = load_shader("C:/Users/Legion Slim 5/dev/OpenGL/shaders/fragment_shader.glsl", GL_FRAGMENT_SHADER);
     int shader_program = create_shader_program();
-    float vertices[] = {
+    float rect_vertices[] = {
         // positions          // colors           // texture coords
         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // rect top right
         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // rect bottom right
         -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // rect bottom left
         -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f,    // rect top left 
+    }; 
+
+    float tri_vertices[] = {
         0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // tri top right
         0.5f,  -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // tri top right
         -0.5f,  -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // tri top right
-    }; 
-    unsigned int indices[] = {  // note that we start from 0!
+    };
+
+    unsigned int rect_indices[] = {  // note that we start from 0!
         0, 1, 3,   // first triangle
         1, 2, 3,    // second triangle
-        4, 5, 6,    // second triangle
     };
+
+    
 
     // Create a buffer and bind it as a GL_ARRAY_BUFFER, making it a Vertex Buffer Object
     unsigned int VAO, VBO, EBO;
@@ -170,15 +174,6 @@ int main(void)
     //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 */
-    Rect rectangle = {
-        vertices,
-        indices,
-        sizeof(vertices),
-        sizeof(indices)
-    };
-
-    drawRect(&rectangle, VAO, VBO, EBO);
-
     // Texture stuff
     unsigned int texture;
     glGenTextures(1, &texture); // Generates texture object
@@ -193,7 +188,8 @@ int main(void)
     int width, height, nrChannels;
     // The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
     unsigned char *data = stbi_load("resources/container.jpg", &width, &height, &nrChannels, 0);
-    if(data) {
+    if(data)
+    {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data); // Attaches the actual image to the texture object
         glGenerateMipmap(GL_TEXTURE_2D);
     } else {
@@ -217,13 +213,15 @@ int main(void)
     transform_location = glGetUniformLocation(shader_program, "transform_matrix");
     glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
    */ 
+    // PREVIOUS
     /* Loop until the user closes the window */
+    /*
     while (!glfwWindowShouldClose(window))
     {
         // Not the best way to handle input
         //processInput(window);
 
-        /* Render here */
+        // Render here 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -239,7 +237,7 @@ int main(void)
         transform_location = glGetUniformLocation(shader_program, "transform_matrix");
         glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        /*
+
         vec3 translation_vector = {0.5f, 0.0f, 0.0f};
         mat4 translate_matrix;
         setIdentityMatrix(translate_matrix);
@@ -247,17 +245,45 @@ int main(void)
         multiplyMatrices(transform_matrix, translate_matrix, transform_matrix);
         glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        */
-        vec3 translation_vector = {0.5f, 0.0f, 0.0f};
+        
         mat4 translate_matrix;
         setIdentityMatrix(translate_matrix);
         translate(translate_matrix, translation_vector);
         multiplyMatrices(transform_matrix, translate_matrix, transform_matrix);
         glUniformMatrix4fv(transform_location, 1, GL_TRUE, &transform_matrix[0][0]);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(sizeof(unsigned int) * 6));
-        /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
+        glfwPollEvents();
+    }
+*/
+    Batch batch;
+    batch_init(&batch);
+
+    while(!glfwWindowShouldClose(window))
+    {
+        /* Render here */
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(shader_program);
+
+        batch.vertex_count = 0;
+        batch.index_count = 0;
+
+        Rect rect1 = {
+            rect_vertices,
+            rect_indices,
+            sizeof(rect_vertices),
+            sizeof(rect_indices),
+        };
+
+        batch_add_rect(&batch, &rect1);
+
+        batch_flush(&batch);
+
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
         /* Poll for and process events */
         glfwPollEvents();
     }
