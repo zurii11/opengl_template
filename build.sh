@@ -1,10 +1,10 @@
 #!/bin/bash
 
-INCLUDES="-IC:/Users/Legion Slim 5/dev/OpenGL/include"
-LIBS="-L"lib" -lglfw3 -lgdi32 -lopengl32 -luser32"
-SOURCE_MAIN="C:/Users/Legion Slim 5/dev/OpenGL/src/main.c"
-SOURCE_GLAD="C:/Users/Legion Slim 5/dev/OpenGL/src/glad.c"
-OUTPUT="C:/Users/Legion Slim 5/dev/OpenGL/build/program.exe"
+INCLUDES="-I$PWD/include"
+LIBS="-L"lib" -lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl"
+SOURCE_MAIN="$PWD/src/main.c"
+SOURCE_GLAD="$PWD/src/glad.c"
+OUTPUT="$PWD/build/program.out"
 
 gcc "$SOURCE_MAIN" "$SOURCE_GLAD" -o "$OUTPUT" "$INCLUDES" $LIBS
 
